@@ -5,6 +5,20 @@ const { Plugin } = require('obsidian');
 const OPEN = '<u>';
 const CLOSE = '</u>';
 const UNWRAP_RE = /<u>([\s\S]*?)<\/u>/g;
+const WORD_CHAR_RE = /[A-Za-z0-9_'-]/;
+
+function isWordChar(ch) {
+  return typeof ch === 'string' && ch.length === 1 && WORD_CHAR_RE.test(ch);
+}
+
+/** Expand a cursor position on one line to the ASCII word it sits in, or null. */
+function wordAt(line, ch) {
+  let start = ch;
+  let end = ch;
+  while (start > 0 && isWordChar(line[start - 1])) start--;
+  while (end < line.length && isWordChar(line[end])) end++;
+  return start === end ? null : { start: start, end: end };
+}
 
 /** Wrap one line's content in <u>..</u>, keeping indent and trailing spaces outside. */
 function wrapLine(line) {
@@ -39,13 +53,13 @@ function selectionInsideTag(editor) {
 function toggle(editor) {
   const selection = editor.getSelection();
 
-  // 1. No selection: toggle a tag pair at the cursor, otherwise insert one.
+  // 1. No selection: work with the tag pair or the word at the cursor.
   if (!selection) {
     const c = editor.getCursor();
     const line = editor.getLine(c.line);
-    const before = line.slice(0, c.ch);
-    const after = line.slice(c.ch);
-    if (before.endsWith(OPEN) && after.startsWith(CLOSE)) {
+
+    // 1a. Cursor sits between a tag pair: remove it.
+    if (line.slice(0, c.ch).endsWith(OPEN) && line.slice(c.ch).startsWith(CLOSE)) {
       editor.replaceRange(
         '',
         { line: c.line, ch: c.ch - OPEN.length },
@@ -53,6 +67,27 @@ function toggle(editor) {
       );
       return;
     }
+
+    // 1b. Cursor sits inside an ASCII word: toggle that word.
+    const word = wordAt(line, c.ch);
+    if (word) {
+      const wordText = line.slice(word.start, word.end);
+      const openStart = word.start - OPEN.length;
+      const alreadyWrapped = openStart >= 0
+        && line.slice(openStart, word.start) === OPEN
+        && line.slice(word.end, word.end + CLOSE.length) === CLOSE;
+
+      if (alreadyWrapped) {
+        editor.setLine(c.line, line.slice(0, openStart) + wordText + line.slice(word.end + CLOSE.length));
+        editor.setCursor({ line: c.line, ch: c.ch - OPEN.length });
+      } else {
+        editor.setLine(c.line, line.slice(0, word.start) + OPEN + wordText + CLOSE + line.slice(word.end));
+        editor.setCursor({ line: c.line, ch: c.ch + OPEN.length });
+      }
+      return;
+    }
+
+    // 1c. Nothing around the cursor: insert a pair and sit between the tags.
     editor.replaceSelection(OPEN + CLOSE);
     const pos = editor.getCursor();
     editor.setCursor({ line: pos.line, ch: pos.ch - CLOSE.length });

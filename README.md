@@ -22,7 +22,8 @@ Six characters typed around every phrase, closed every time, forgotten often eno
 | Press it again | `important` |
 | Select text that is already inside `<u>` … `</u>` | the tags are removed, no nesting |
 | Put the cursor inside an empty `<u>…</u>` pair and press | the pair is removed |
-| Press with nothing selected | `<u></u>`, cursor between the tags |
+| Put the cursor inside a word, nothing selected | that word is wrapped (press again to unwrap) |
+| Press with the cursor on blank space | `<u></u>`, cursor between the tags |
 | Select several paragraphs | each line wrapped on its own |
 
 ## Why this isn't a five-line snippet
@@ -31,7 +32,7 @@ Because the naive version breaks on real notes.
 
 - **An inline HTML tag cannot span a line break.** Wrapping a multi-line selection in one `<u>…</u>` silently breaks the rendering of the paragraph around it. Underliner wraps each line separately and leaves leading whitespace outside the tag, so it keeps working inside list items and blockquotes.
 - **Pressing the hotkey twice should be a no-op.** Underliner detects a surrounding pair — or any `<u>` pair contained in the selection — and removes it instead of nesting another one.
-- **Nothing selected shouldn't do nothing.** It inserts an empty pair and drops the cursor between the tags.
+- **Nothing selected shouldn't do nothing.** With the cursor inside a word, that word is wrapped — no selecting first. On blank space it inserts an empty pair and drops the cursor between the tags.
 
 ## Install
 

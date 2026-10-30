@@ -1,7 +1,7 @@
 {
   "id": "underliner",
   "name": "Underliner",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "minAppVersion": "1.4.0",
   "description": "Press Ctrl+U to underline the selection. Press again to remove it. Multi-line selections are wrapped line by line.",
   "author": "Yuhang",
